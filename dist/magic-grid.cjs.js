@@ -109,7 +109,7 @@ MagicGrid.prototype.init = function init () {
     var style = this.items[i].style;
 
     style.position = "absolute";
-  
+
     if (this.animate) {
       style.transition = (this.useTransform ? "transform" : "top, left") + " 0.2s ease";
     }
@@ -260,7 +260,7 @@ MagicGrid.prototype.listen = function listen () {
         timeout = setTimeout(function() {
           this.positionItems();
           timeout = null;
-        }, 200);
+        }, 200).bind(this);
       }
     };
 
