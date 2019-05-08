@@ -87,6 +87,9 @@ var MagicGrid = function MagicGrid (config) {
   this.animate = config.animate || false;
   this.started = false;
 
+  // This event starts null, but will be set when applied
+  this.resizeEvent = null;
+
   this.init();
 };
 
@@ -247,23 +250,27 @@ MagicGrid.prototype.getReady = function getReady () {
  * window size changes.
  */
 MagicGrid.prototype.listen = function listen () {
-    var this$1 = this;
-
   if (this.ready()) {
     var timeout;
 
-    window.addEventListener("resize", function () {
-      if (!timeout){
-        timeout = setTimeout(function () {
-          this$1.positionItems();
+    this.resizeEvent = function resizeEvent() {
+      if (!timeout) {
+        timeout = setTimeout(function() {
+          this.positionItems();
           timeout = null;
         }, 200);
       }
-    });
+    };
+
+    window.addEventListener("resize", this.resizeEvent);
 
     this.positionItems();
   }
   else { this.getReady(); }
+};
+
+MagicGrid.prototype.destroy = function destroy () {
+  window.removeEventListener("resize", this.resizeEvent);
 };
 
 export default MagicGrid;

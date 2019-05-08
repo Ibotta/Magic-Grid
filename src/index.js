@@ -41,6 +41,9 @@ class MagicGrid {
     this.animate = config.animate || false;
     this.started = false;
 
+    // This event starts null, but will be set when applied
+    this.resizeEvent = null;
+
     this.init();
   }
 
@@ -200,18 +203,24 @@ class MagicGrid {
     if (this.ready()) {
       let timeout;
 
-      window.addEventListener("resize", () => {
-        if (!timeout){
-          timeout = setTimeout(() => {
+      this.resizeEvent = function resizeEvent() {
+        if (!timeout) {
+          timeout = setTimeout(function() {
             this.positionItems();
             timeout = null;
           }, 200);
         }
-      });
+      };
+
+      window.addEventListener("resize", this.resizeEvent);
 
       this.positionItems();
     }
     else this.getReady();
+  }
+
+  destroy () {
+    window.removeEventListener("resize", this.resizeEvent);
   }
 }
 
