@@ -86,14 +86,23 @@ var MagicGrid = function MagicGrid (config) {
   this.useTransform = config.useTransform;
   this.animate = config.animate || false;
   this.started = false;
+  this._timeout = null;
 
+  // bind this context to public methods
+  this.positionItems = this.positionItems.bind(this);
+  this.listen = this.listen.bind(this);
+  this.destroy = this.destroy.bind(this);
+  this.handleWindowResize = this.handleWindowResize.bind(this);
   this.init();
 };
 
 /**
  * Initializes styles
  *
- * @private
+ * [1] - Add event listener
+ * [2] - Fix small positioning bump https://cl.ly/ba80133631a9
+ *
+ * @public
  */
 MagicGrid.prototype.init = function init () {
   if (!this.ready() || this.started) { return; }
@@ -104,12 +113,14 @@ MagicGrid.prototype.init = function init () {
     var style = this.items[i].style;
 
     style.position = "absolute";
-  
+
     if (this.animate) {
       style.transition = (this.useTransform ? "transform" : "top, left") + " 0.2s ease";
     }
   }
 
+  this.listen(); // [1]
+  this.positionItems(); // [2]
   this.started = true;
 };
 
@@ -171,6 +182,8 @@ MagicGrid.prototype.nextCol = function nextCol (cols, i) {
  * on their corresponding column's height
  * and index then stretches the container to
  * the height of the grid.
+ *
+ * @public
  */
 MagicGrid.prototype.positionItems = function positionItems () {
   var ref = this.setup();
@@ -236,7 +249,6 @@ MagicGrid.prototype.getReady = function getReady () {
       clearInterval(interval);
 
       this$1.init();
-      this$1.listen();
     }
   }, 100);
 };
@@ -245,25 +257,65 @@ MagicGrid.prototype.getReady = function getReady () {
  * Positions all the items and
  * repositions them whenever the
  * window size changes.
+ *
+ * @public
  */
 MagicGrid.prototype.listen = function listen () {
-    var this$1 = this;
-
   if (this.ready()) {
-    var timeout;
-
-    window.addEventListener("resize", function () {
-      if (!timeout){
-        timeout = setTimeout(function () {
-          this$1.positionItems();
-          timeout = null;
-        }, 200);
-      }
-    });
-
+    window.addEventListener("resize", this.handleWindowResize);
     this.positionItems();
   }
   else { this.getReady(); }
+};
+
+/**
+ * call positionItems() on window resize
+ * note: referenceable, so it can be removed
+ *
+ * @private
+ */
+MagicGrid.prototype.handleWindowResize = function handleWindowResize () {
+    var this$1 = this;
+
+  if (!this._timeout){
+    this._timeout = setTimeout(function () {
+      this$1.positionItems();
+      this$1._timeout = null;
+    }, 200);
+  }
+};
+
+/**
+ * Remove all applied style properties and events
+ *
+ * @public
+ */
+MagicGrid.prototype.destroy = function destroy () {
+    var this$1 = this;
+
+  // remove container applied style properties
+  this.container.style.removeProperty("height");
+  this.container.style.removeProperty("position");
+
+  // convert HTMLCollection to iterable
+  var itemsArr = [].slice.call(this.items);
+  // remove grid items applied style properties
+  itemsArr.map(function (item) {
+    item.style.removeProperty("position");
+    item.style.removeProperty("transition");
+    if (this$1.useTransform) {
+      item.style.removeProperty('transform');
+    } else {
+      item.style.removeProperty("top");
+      item.style.removeProperty("left");
+    }
+  });
+
+  // removeEvents
+  window.removeEventListener("resize", this.handleWindowResize);
+
+  // turn off flag
+  this.started = false;
 };
 
 export default MagicGrid;
