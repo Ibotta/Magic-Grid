@@ -250,15 +250,16 @@ MagicGrid.prototype.getReady = function getReady () {
  * window size changes.
  */
 MagicGrid.prototype.listen = function listen () {
+  var that = this;
   if (this.ready()) {
     var timeout;
 
     this.resizeEvent = function resizeEvent() {
       if (!timeout) {
         timeout = setTimeout(function() {
-          this.positionItems();
+          that.positionItems();
           timeout = null;
-        }, 200).bind(this);
+        }, 200);
       }
     };
 
